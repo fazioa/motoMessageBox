@@ -19,7 +19,10 @@
 
 //If you want to use the Arduino functions to manage SMS, uncomment the lines below.
 #include "sms.h"
+//#include "caratteriBarraSegnale.h"
 SMSGSM sms;
+
+
 
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
@@ -35,6 +38,7 @@ int i;
 String sMessaggio;
 int iWaitingDot = 0;
 int iNextPosSMS;
+String sSignal;
 
 void delete_sms_text_array() {
   for (int i = 0; i < 32; i++) {
@@ -53,6 +57,7 @@ void deleteAllSMS() {
     }
   }
 }
+
 long tempo;
 void setStart_PersistenzaMsg() {
   tempo = millis();
@@ -68,18 +73,71 @@ boolean checkTime_PersistenzaMsg() {
   return false;
 }
 
+//void stampaBarra(long lSignal, int iCaratteriDisponibili) {
+//  double a = iCaratteriDisponibili / 100 * lSignal;
+//  // disegna i rettangoli neri sull'lcd
+//  if (a >= 1) {
+//    for (int i = 1; i < a; i++) {
+//      lcd.write(4);
+//      b = i;
+//    }
+//    a = a - b;
+//  }
+//  peace = a * 5;
+//  // drawing charater's colums
+//  switch (peace) {
+//    case 0:
+//      break;
+//    case 1:
+//      lcd.print((char)0);
+//      break;
+//    case 2:
+//      lcd.write(1);
+//      break;
+//    case 3:
+//      lcd.write(2);
+//      break;
+//    case 4:
+//      lcd.write(3);
+//      break;
+//  }
+//  //clearing line
+//
+//  for (int i = 0; i < (iCaratteriDisponibili - b); i++) {
+//    lcd.print(" ");
+//  }
+//}
+
+
 void setup() {
+  //Serial connection.
+  Serial.begin(9600);
+  Serial.println("EXTREME RIDERS Moto Messages Box");
+
+  Serial.println("LCD Begin and Init");
+//  lcd.createChar(0, p1);
+//  lcd.createChar(1, p2);
+//  lcd.createChar(2, p3); //genere i caratteri personalizzati
+//  lcd.createChar(3, p4);
+//  lcd.createChar(4, p5);
+
+  lcd.begin(16, 2);
   lcd.init();                      // initialize the lcd
+  //crea il set di caratteri definiti nel file caratteriBarraSegnale.h
+  Serial.println("LCD: Crea caratteri personalizzati per barra grafica");
+
+
+  Serial.println("wait...");
 
   lcd.setCursor(1, 0);
   lcd.print("EXTREME RIDERS");
   lcd.setCursor(0, 1);
   lcd.print("wait...");
 
-  //Serial connection.
-  Serial.begin(9600);
-  Serial.println("EXTREME RIDERS Moto Messages.");
   lcd.backlight();
+
+
+
 
   //Start configuration of shield with baudrate.
   while (!started) {
@@ -112,6 +170,8 @@ void setup() {
 
 
 void loop() {
+
+
   if (started)
   {
     //Read if there are messages on SIM card and print them.
@@ -200,13 +260,13 @@ void loop() {
         if (sms_text[i] != 0) bIsEmpty = false;
       }
       if (bIsEmpty) {
-        //se non c'è alcun messaggio da visualizzare allora il display mostra la schermata di attesa 
+        //se non c'è alcun messaggio da visualizzare allora il display mostra la schermata di attesa
         lcd.clear();
         iWaitingDot = ++iWaitingDot % 16;
         lcd.setCursor(iWaitingDot, 0);
         lcd.print(".");
-        lcd.setCursor(iWaitingDot, 1);
-        lcd.print(".");
+        // lcd.setCursor(iWaitingDot, 1);
+        // lcd.print(".");
       } else {
         //se c'è un messaggio in visuallizzazione allora controllo da quanto tempo è visualizzato. Trascorso il tempo di TIMEOUT il msg viene cancellato
         if (checkTime_PersistenzaMsg()) {
@@ -218,9 +278,29 @@ void loop() {
         }
 
       }
+      //se il sistema è in attesa allora visualizza l'intensità del segnale
+      gsm.SimpleWriteln("AT+CSQ");
+      long l = gsm._tf.getValue();
+      Serial.print("Signal: ");
+      Serial.println(l);
+
+      lcd.setCursor(0, 1);
+      lcd.print("s:");
+      //stampa sulla seconda riga del display una barra che indica l'intensità del segnale
+      lcd.setCursor(2, 1);
+      //      sSignal = "";
+      //      for (int i = 0; i < l; i++) {
+      //        sSignal = sSignal + "0";
+      //      }
+      //      Serial.print("S:");
+      //      Serial.println(sSignal);
+      //      lcd.print(sSignal);
+
+      //stampa la barra grafica del segnale gsm sul display
+      //parametri: valore percentuale, caratteri disponibili sul display
+      //  stampaBarra( l, 13);
     }
     delay(1000);
-
   }
 }
 
