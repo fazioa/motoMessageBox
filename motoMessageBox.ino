@@ -158,7 +158,7 @@ void setup() {
       Serial.println("\nstatus=IDLE");
     }
   }
-if (started) {
+  if (started) {
     lcd.setCursor(0, 1);
     lcd.print("Start...");
     deleteAllSMS();
@@ -179,7 +179,8 @@ void loop() {
     //sms_position = sms.IsSMSPresent(SMS_ALL);
     //sms_position = 19;
     //for (sms_position = 0; sms_position <= 50; sms_position++) {
-    if (sms_position) {
+
+    if (sms_position > 0) {
       lcd.clear();
       delete_sms_text_array();
       //avvia il timer. Dopo il TIMEOUT il messaggio verrà cancellato dal display
@@ -251,9 +252,21 @@ void loop() {
       Serial.print("2: ");
       Serial.println(sMessaggio);
 
-    }
-    else
+    } else
     {
+      //  -1 - comm. line to the GSM module is not free
+      //  -2 - GSM module didn't answer in timeout
+      //  -3 - GSM module has answered "ERROR" string
+      switch (sms_position)
+      {
+        case -1 : Serial.println("comm. line to the GSM module is not free");
+        break;
+        case -2 : Serial.println("GSM module didn't answer in timeout");
+        break;
+        case -3 : Serial.println("GSM module has answered ERROR string");
+        break;
+      }
+
       Serial.println("NO NEW SMS,WAITING");
       boolean bIsEmpty = true;
       for (int i = 0; i < 32; i++) {
@@ -267,8 +280,25 @@ void loop() {
         iWaitingDot = ++iWaitingDot % 16;
         lcd.setCursor(iWaitingDot, 0);
         lcd.print(".");
-        // lcd.setCursor(iWaitingDot, 1);
-        // lcd.print(".");
+
+        //se il sistema è in attesa allora visualizza l'intensità del segnale
+        gsm.SimpleWriteln("AT+CSQ");
+        //gsm.SimpleWriteln("AT+CSQ=?");
+        delay(500);
+        // gsm.WhileSimpleRead();
+        long l = gsm._tf.getValue();
+
+        Serial.print("Signal (0..31): ");
+        Serial.println(l);
+
+        lcd.setCursor(0, 1);
+        lcd.print("s:");
+        //stampa sulla seconda riga del display una barra che indica l'intensità del segnale
+        lcd.setCursor(2, 1);
+
+        //stampa la barra grafica del segnale gsm sul display
+        //parametri: valore percentuale, caratteri disponibili sul display
+        stampaBarra( l, 13);
       } else {
         //se c'è un messaggio in visuallizzazione allora controllo da quanto tempo è visualizzato. Trascorso il tempo di TIMEOUT il msg viene cancellato
         if (checkTime_PersistenzaMsg()) {
@@ -278,28 +308,9 @@ void loop() {
           //cancella il contenuto dell'array messaggio. in questo modo il display mostrerà la schermata di attesa msg
           delete_sms_text_array() ;
         }
-
       }
-      //se il sistema è in attesa allora visualizza l'intensità del segnale
-      gsm.SimpleWriteln("AT+CSQ");
-      //gsm.SimpleWriteln("AT+CSQ=?");
-      delay(200);
-      gsm.WhileSimpleRead();
-     
-    //  long l = gsm._tf.getValue();
-      //Serial.print("Signal (0..31): ");
-     // Serial.println(l);
-
-      lcd.setCursor(0, 1);
-      lcd.print("s:");
-      //stampa sulla seconda riga del display una barra che indica l'intensità del segnale
-      lcd.setCursor(2, 1);
-
-      //stampa la barra grafica del segnale gsm sul display
-      //parametri: valore percentuale, caratteri disponibili sul display
-//      stampaBarra( l, 13);
     }
-    delay(800);
+    delay(500);
   }
 }
 
