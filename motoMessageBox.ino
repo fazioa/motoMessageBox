@@ -13,6 +13,9 @@
 //A5 to SCL
 
 #define TIMEOUT_MESSAGGIO 50 //tempo in secondi
+#define SIGNALBAR //se la variabile è definita allora esegue il controllo del segnale
+#define SEGNALE_OGNI_CICLI 5
+#define TACCHE_SEGNALE_BASSO_DA_SOTTRARRE 5
 
 #include "SIM900.h"
 #include <SoftwareSerial.h>
@@ -39,6 +42,7 @@ String sMessaggio;
 int iWaitingDot = 0;
 int iNextPosSMS;
 String sSignal;
+int iCount = 0;
 
 void delete_sms_text_array() {
   for (int i = 0; i < 32; i++) {
@@ -260,14 +264,15 @@ void loop() {
       switch (sms_position)
       {
         case -1 : Serial.println("comm. line to the GSM module is not free");
-        break;
+          break;
         case -2 : Serial.println("GSM module didn't answer in timeout");
-        break;
+          break;
         case -3 : Serial.println("GSM module has answered ERROR string");
-        break;
+          break;
       }
 
       Serial.println("NO NEW SMS,WAITING");
+      //controlla che l'array di char che contiene il messaggio sia vuoto
       boolean bIsEmpty = true;
       for (int i = 0; i < 32; i++) {
         if (sms_text[i] != 0) bIsEmpty = false;
@@ -281,24 +286,35 @@ void loop() {
         lcd.setCursor(iWaitingDot, 0);
         lcd.print(".");
 
-        //se il sistema è in attesa allora visualizza l'intensità del segnale
-        gsm.SimpleWriteln("AT+CSQ");
-        //gsm.SimpleWriteln("AT+CSQ=?");
-        delay(500);
-        // gsm.WhileSimpleRead();
-        long l = gsm._tf.getValue();
+#ifdef SIGNALBAR
+        //stampa la barra del segnale ogni cinque cicli
+        iCount++;
+        if (iCount % SEGNALE_OGNI_CICLI == 0) {
+          //se il sistema è in attesa allora visualizza l'intensità del segnale
+          gsm.SimpleWriteln("AT+CSQ");
+          //gsm.SimpleWriteln("AT+CSQ=?");
 
-        Serial.print("Signal (0..31): ");
-        Serial.println(l);
+          // gsm.WhileSimpleRead();
+          long lSignal = gsm._tf.getValue();
 
-        lcd.setCursor(0, 1);
-        lcd.print("s:");
-        //stampa sulla seconda riga del display una barra che indica l'intensità del segnale
-        lcd.setCursor(2, 1);
+          Serial.print("Signal (0..31): ");
+          Serial.println(lSignal);
 
-        //stampa la barra grafica del segnale gsm sul display
-        //parametri: valore percentuale, caratteri disponibili sul display
-        stampaBarra( l, 13);
+
+
+          lcd.setCursor(0, 1);
+          lcd.print("s:");
+          //stampa sulla seconda riga del display una barra che indica l'intensità del segnale
+          lcd.setCursor(2, 1);
+
+          //sottraggo dal segnale il valore TACCHE_SEGNALE_BASSO_DA_SOTTRARRE, corrispondenti al segnale eccessivamente basso.
+          lSignal = lSignal - TACCHE_SEGNALE_BASSO_DA_SOTTRARRE;
+
+          //stampa la barra grafica del segnale gsm sul display
+          //parametri: valore percentuale, caratteri disponibili sul display
+          stampaBarra( lSignal, 13);
+#endif
+        }
       } else {
         //se c'è un messaggio in visuallizzazione allora controllo da quanto tempo è visualizzato. Trascorso il tempo di TIMEOUT il msg viene cancellato
         if (checkTime_PersistenzaMsg()) {
@@ -310,7 +326,7 @@ void loop() {
         }
       }
     }
-    delay(500);
+    delay(1000);
   }
 }
 
