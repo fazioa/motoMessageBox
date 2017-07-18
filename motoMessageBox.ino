@@ -19,7 +19,7 @@
 
 //If you want to use the Arduino functions to manage SMS, uncomment the lines below.
 #include "sms.h"
-//#include "caratteriBarraSegnale.h"
+#include "caratteriBarraSegnale.h"
 SMSGSM sms;
 
 
@@ -73,40 +73,43 @@ boolean checkTime_PersistenzaMsg() {
   return false;
 }
 
-//void stampaBarra(long lSignal, int iCaratteriDisponibili) {
-//  double a = iCaratteriDisponibili / 100 * lSignal;
-//  // disegna i rettangoli neri sull'lcd
-//  if (a >= 1) {
-//    for (int i = 1; i < a; i++) {
-//      lcd.write(4);
-//      b = i;
-//    }
-//    a = a - b;
-//  }
-//  peace = a * 5;
-//  // drawing charater's colums
-//  switch (peace) {
-//    case 0:
-//      break;
-//    case 1:
-//      lcd.print((char)0);
-//      break;
-//    case 2:
-//      lcd.write(1);
-//      break;
-//    case 3:
-//      lcd.write(2);
-//      break;
-//    case 4:
-//      lcd.write(3);
-//      break;
-//  }
-//  //clearing line
-//
-//  for (int i = 0; i < (iCaratteriDisponibili - b); i++) {
-//    lcd.print(" ");
-//  }
-//}
+void stampaBarra(long lSignal, int iCaratteriDisponibili) {
+
+  double a = ((double) iCaratteriDisponibili / 100) * (((double)lSignal / 31) * 100);
+  Serial.print("a: ");
+  Serial.println(a);
+  // disegna i rettangoli neri sull'lcd
+  if (a >= 1) {
+    for (int i = 1; i < a; i++) {
+      lcd.write(4);
+      b = i;
+    }
+    a = a - b;
+  }
+  peace = a * 5;
+  // drawing charater's colums
+  switch (peace) {
+    case 0:
+      break;
+    case 1:
+      lcd.print((char)0);
+      break;
+    case 2:
+      lcd.write(1);
+      break;
+    case 3:
+      lcd.write(2);
+      break;
+    case 4:
+      lcd.write(3);
+      break;
+  }
+  //clearing line
+
+  for (int i = 0; i < (iCaratteriDisponibili - b); i++) {
+    lcd.print(" ");
+  }
+}
 
 
 void setup() {
@@ -115,14 +118,14 @@ void setup() {
   Serial.println("EXTREME RIDERS Moto Messages Box");
 
   Serial.println("LCD Begin and Init");
-//  lcd.createChar(0, p1);
-//  lcd.createChar(1, p2);
-//  lcd.createChar(2, p3); //genere i caratteri personalizzati
-//  lcd.createChar(3, p4);
-//  lcd.createChar(4, p5);
-
-  lcd.begin(16, 2);
   lcd.init();                      // initialize the lcd
+  lcd.createChar(0, p1);
+  lcd.createChar(1, p2);
+  lcd.createChar(2, p3); //genere i caratteri personalizzati
+  lcd.createChar(3, p4);
+  lcd.createChar(4, p5);
+
+
   //crea il set di caratteri definiti nel file caratteriBarraSegnale.h
   Serial.println("LCD: Crea caratteri personalizzati per barra grafica");
 
@@ -135,7 +138,6 @@ void setup() {
   lcd.print("wait...");
 
   lcd.backlight();
-
 
 
 
@@ -156,14 +158,12 @@ void setup() {
       Serial.println("\nstatus=IDLE");
     }
   }
-
-  if (started) {
+if (started) {
     lcd.setCursor(0, 1);
     lcd.print("Start...");
     deleteAllSMS();
   }
 
-  delay(1000);
   delete_sms_text_array();
   lcd.clear();
 }
@@ -261,7 +261,9 @@ void loop() {
       }
       if (bIsEmpty) {
         //se non c'è alcun messaggio da visualizzare allora il display mostra la schermata di attesa
-        lcd.clear();
+        //lcd.clear();
+        lcd.setCursor(iWaitingDot, 0);
+        lcd.print(" ");
         iWaitingDot = ++iWaitingDot % 16;
         lcd.setCursor(iWaitingDot, 0);
         lcd.print(".");
@@ -280,27 +282,24 @@ void loop() {
       }
       //se il sistema è in attesa allora visualizza l'intensità del segnale
       gsm.SimpleWriteln("AT+CSQ");
-      long l = gsm._tf.getValue();
-      Serial.print("Signal: ");
-      Serial.println(l);
+      //gsm.SimpleWriteln("AT+CSQ=?");
+      delay(200);
+      gsm.WhileSimpleRead();
+     
+    //  long l = gsm._tf.getValue();
+      //Serial.print("Signal (0..31): ");
+     // Serial.println(l);
 
       lcd.setCursor(0, 1);
       lcd.print("s:");
       //stampa sulla seconda riga del display una barra che indica l'intensità del segnale
       lcd.setCursor(2, 1);
-      //      sSignal = "";
-      //      for (int i = 0; i < l; i++) {
-      //        sSignal = sSignal + "0";
-      //      }
-      //      Serial.print("S:");
-      //      Serial.println(sSignal);
-      //      lcd.print(sSignal);
 
       //stampa la barra grafica del segnale gsm sul display
       //parametri: valore percentuale, caratteri disponibili sul display
-      //  stampaBarra( l, 13);
+//      stampaBarra( l, 13);
     }
-    delay(1000);
+    delay(800);
   }
 }
 
