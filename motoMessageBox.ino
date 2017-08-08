@@ -4,6 +4,10 @@
 //Riceve esclusivamente SMS e li visualizza sul display
 //Studiato come sistema di comunicazione box - pilota
 
+//Lo sketch usa le librerie GSMSHIELD e LiquidCrystal I2C
+//installare la libreria GSMSHIELD scaricandola da https://github.com/jefflab/GSMSHIELD
+//installare la libreria LiquidCrystal I2C reperibile nel Gestore librerie
+
 //PIN SIM900A
 //2 to TXD
 //3 to RXD
