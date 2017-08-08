@@ -14,7 +14,7 @@
 
 #define TIMEOUT_MESSAGGIO 50 //tempo in secondi
 
-#include "SIM900.h"
+#include "SIM900.h" //installare la libreria GSMSHIELD scaricandola da https://github.com/jefflab/GSMSHIELD
 #include <SoftwareSerial.h>
 
 //If you want to use the Arduino functions to manage SMS, uncomment the lines below.
@@ -22,7 +22,7 @@
 SMSGSM sms;
 
 #include <Wire.h>
-#include <LiquidCrystal_I2C.h>
+#include <LiquidCrystal_I2C.h> //installare la libreria LiquidCrystal I2C reperibile nel Gestore librerie
 LiquidCrystal_I2C lcd(0x27, 16, 2); // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 boolean started = false;
